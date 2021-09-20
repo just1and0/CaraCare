@@ -28,12 +28,12 @@ import { HeaderItems } from './components/headerItems';
 import { TextInput } from './components/TextInput'
 
 const App = () => {
-  const [carouselIndex, setCarouselIndex] = useState(0);
-  const [toggleModal, setToggleModal] = useState(false);
+  const [carouselIndex, setCarouselIndex] = useState<number>(0);
+  const [toggleModal, setToggleModal] = useState<boolean>(false);
 
   const [targetWater, setTargetWater] = useState<string>('3500');
   const [totalWaterDrank, setTotalWaterDrank] = useState<string>('2400');
-  const [achievedGoalDay, setAchievedGoalDay] = useState(15) 
+  const [achievedGoalDay, setAchievedGoalDay] = useState<number>(15) 
 
   const isDarkMode = useColorScheme() === 'dark';
 

@@ -2,12 +2,10 @@ import React from 'react'
 import { View, Text, TextInput as DefaultTextInput, TextInputProps as DefaultTextInputProps} from 'react-native'
 import { style } from '../assets/style';
 
-interface TextInputProps { 
- 
-}
+interface TextInputProps { }
 
 export const TextInput = (props: TextInputProps & DefaultTextInputProps) => {
-    const { onChangeText,value } = props;
+    const { onChangeText, value } = props;
     return (
         <View style={style().TextInputView}>
             <DefaultTextInput
