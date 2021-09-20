@@ -33,7 +33,7 @@ const App = () => {
 
   const [targetWater, setTargetWater] = useState<string>('3500');
   const [totalWaterDrank, setTotalWaterDrank] = useState<string>('2400');
-  const [achievedGoalDay, setAchievedGoalDay] = useState<number>(15) 
+  const [achievedGoalDay, setAchievedGoalDay] = useState<number>(0) 
 
   const isDarkMode = useColorScheme() === 'dark';
 

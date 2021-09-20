@@ -93,8 +93,7 @@ export const style = () => {
         carouselTitleCenter: {
             alignSelf:'center'
         },
-        lineView:{
-            // backgroundColor:'red',
+        lineView:{ 
             flexDirection:'row',
             position:'absolute',
             top:11,
@@ -143,8 +142,7 @@ export const style = () => {
             marginBottom:20
         },
         TextInputView:{
-            flexDirection:'row',
-            // backgroundColor:'red',
+            flexDirection:'row', 
             width:'70%',
             alignSelf:'center',
             marginBottom:10,
