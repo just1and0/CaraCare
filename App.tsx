@@ -23,9 +23,9 @@ import PersonSvg from './components/person';
 
 import { style } from './assets/style';
 import { Button } from './components/buttons';
-import { CarouselView } from './components/Carousel';
+import { CarouselView } from './components/carousel';
 import { HeaderItems } from './components/headerItems';
-import { TextInput } from './components/TextInput'
+import { TextInput } from './components/textInput'
 
 const App = () => {
   const [carouselIndex, setCarouselIndex] = useState<number>(0);
