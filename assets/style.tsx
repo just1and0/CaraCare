@@ -39,7 +39,7 @@ export const style = () => {
         humanView: {
             flex: 5,
             alignItems:'center',
-            justifyContent:'center'
+            justifyContent:'center',
         },
         alertView: {
             flex: 1,

@@ -8,7 +8,7 @@
  * @format
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   SafeAreaView,
   StatusBar,
@@ -16,8 +16,10 @@ import {
   useColorScheme,
   View,
   Pressable,
-  Modal
+  Modal,
+  Animated
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import PersonSvg from './components/person';
 
@@ -31,9 +33,9 @@ const App = () => {
   const [carouselIndex, setCarouselIndex] = useState<number>(0);
   const [toggleModal, setToggleModal] = useState<boolean>(false);
 
-  const [targetWater, setTargetWater] = useState<string>('3500');
-  const [totalWaterDrank, setTotalWaterDrank] = useState<string>('2400');
-  const [achievedGoalDay, setAchievedGoalDay] = useState<number>(0) 
+  const [targetWater, setTargetWater] = useState<string>('500');
+  const [totalWaterDrank, setTotalWaterDrank] = useState<number>(0);
+  const [achievedGoalDay, setAchievedGoalDay] = useState<number>(0)
 
   const isDarkMode = useColorScheme() === 'dark';
 
@@ -54,12 +56,14 @@ const App = () => {
 
   const currentActiveCarouselItem = carouselOptions[carouselIndex];
 
+  const animatedHeight = useRef(new Animated.Value(0)).current;
+
   const onIncreaseWaterVolumeTaken = () => {
-    alert('volume increased')
+    animateWaterLevel(calculateAnimationLevel(currentActiveCarouselItem.value, "increase"));
   }
 
   const onDecreaseWaterVolumeTaken = () => {
-    alert('volume Decreased')
+    animateWaterLevel(calculateAnimationLevel(currentActiveCarouselItem.value, "decrease"));
   }
 
   const updateToggleModal = () => {
@@ -68,13 +72,136 @@ const App = () => {
 
   const convertHelper = () => {
 
-    let MLtoL = (value: string) => {
+    let MLtoL = (value: number | string) => {
       // 1 liter = 1000 ml.
       // X       =  value
       return 1 * parseInt(`${value}`) / 1000;
     }
     return { MLtoL };
   }
+
+  const animateWaterLevel = (toValue: number) => {
+    return Animated.timing(animatedHeight, {
+      toValue: toValue,
+      duration: 1000,
+      useNativeDriver: false
+    }).start();
+  }
+
+  const calculateAnimationLevel = (currentWaterIntake: number, type: 'increase' | 'decrease') => {
+    //  currentSetGoal = maxLevel
+    //  Total water drank (currentWaterIntake + prevTatal water drunk) = X
+
+    let currentSetGoal = targetWater;
+    let maxLevel = 355;
+
+    if (type == 'increase') {
+      let totalWaterDrunk = totalWaterDrank + currentWaterIntake;
+      let result = maxLevel * totalWaterDrunk / Number(currentSetGoal);
+
+      // update state values
+      setAchievedGoalDay(achievedGoalDay + 1)
+      totalWaterDrunk > Number(currentSetGoal) ? setTotalWaterDrank(Number(currentSetGoal)) : setTotalWaterDrank(totalWaterDrunk)
+
+      // store updated data locally 
+      const prevState = {
+        targetWater,
+        totalWaterDrank,
+        achievedGoalDay
+      };
+      const jsonValue = JSON.stringify(prevState)
+      AsyncStorage.setItem('@storedState', jsonValue)
+
+
+      return result;
+    } else {
+      let totalWaterDrunk = totalWaterDrank - currentWaterIntake;
+      let result = maxLevel * totalWaterDrunk / Number(currentSetGoal);
+
+      // update state values
+      setAchievedGoalDay(achievedGoalDay - 1)
+      totalWaterDrunk < 0 ? setTotalWaterDrank(0) : setTotalWaterDrank(totalWaterDrunk)
+
+      // store updated data locally 
+      const prevState = {
+        targetWater,
+        totalWaterDrank,
+        achievedGoalDay
+      };
+      const jsonValue = JSON.stringify(prevState)
+      AsyncStorage.setItem('@storedState', jsonValue)
+
+      return result;
+    }
+  }
+
+  useEffect(() => {
+    // total = 355
+    // current = x
+    let newAnimatedValue = 355 * totalWaterDrank / Number(targetWater);
+    animateWaterLevel(newAnimatedValue)
+  }, [targetWater, totalWaterDrank, achievedGoalDay])
+
+  const asyncStorageHelper = () => {
+
+    const storeData = async (value: string, key: string) => {
+      try {
+        await AsyncStorage.setItem(key, value)
+      } catch (e) {
+        return e;
+      }
+    }
+
+    const storeObjectData = async (value: string & number, key: string) => {
+      try {
+        const jsonValue = JSON.stringify(value)
+        await AsyncStorage.setItem(key, jsonValue)
+      } catch (e) {
+        return e
+      }
+    }
+
+    const getData = async (key: string) => {
+      try {
+        const value = await AsyncStorage.getItem(key)
+        if (value !== null) {
+          return value;
+        }
+      } catch (e) {
+        return e;
+      }
+    }
+
+    const getObjectData = async (key: string) => {
+      try {
+        const jsonValue = await AsyncStorage.getItem(key)
+        return jsonValue != null ? JSON.parse(jsonValue) : null;
+      } catch (e) {
+        return e
+      }
+    }
+
+    return { storeData, storeObjectData, getData, getObjectData };
+  }
+
+  // manage localStorage data
+  useEffect(() => {
+    asyncStorageHelper().getData('@firstOpen').then(res => {
+      if (res === undefined) {
+        // first time user
+        AsyncStorage.setItem('@firstOpen', 'no')
+      } else {
+        asyncStorageHelper().getObjectData('@storedState').then(res => {
+          setTargetWater(res.targetWater);
+          setTotalWaterDrank(res.totalWaterDrank);
+          setAchievedGoalDay(res.achievedGoalDay);
+
+          let newAnimatedValue = 355 * res.totalWaterDrank / Number(res.targetWater);
+          animateWaterLevel(newAnimatedValue)
+        })
+      }
+    })
+  }, [])
 
   return (
     <SafeAreaView style={style().flex}>
@@ -86,7 +213,15 @@ const App = () => {
         </View>
         <View style={style().body}>
           <View style={style().humanView}>
-            <PersonSvg />
+            <View style={{
+              height: 335,
+              width: 147,
+              overflow: 'hidden'
+            }}>
+              <Animated.View style={{ backgroundColor: 'yellow', position: 'absolute', zIndex: -100, height: animatedHeight, width: '100%', bottom: 0 }} />
+              <PersonSvg />
+            </View>
+
             <View style={style().lineView}>
               <View style={style().line} />
               <Pressable onPress={updateToggleModal}>
